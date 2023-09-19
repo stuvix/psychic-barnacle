@@ -21,4 +21,9 @@ public class Compound {
         this(array[0], array[1]);
         assert(array.length == 2);
     }
+
+    @Override
+    public String toString() {
+        return firstName + " " + lastName;
+    }
 }

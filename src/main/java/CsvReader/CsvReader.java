@@ -28,19 +28,19 @@ public class CsvReader {
      * @throws CsvException did not read the doc, so idk when this happens
      */
     public static List<Compound> readCsv(String filePath, boolean csvHasHeader) throws IOException, CsvException {
-        FileReader fileReader = new FileReader(filePath);
-        // only needed if non-comma separator is used.
-        CSVParser parser = new CSVParserBuilder().withSeparator(separator).build();
-        CSVReader csvReader = new CSVReaderBuilder(fileReader)
-                .withSkipLines(csvHasHeader ? 1 : 0)
-                .withCSVParser(parser)
-                .build();
+        try (FileReader fileReader = new FileReader(filePath)) {
+            // only needed if non-comma separator is used.
+            CSVParser parser = new CSVParserBuilder().withSeparator(separator).build();
+            try (CSVReader csvReader = new CSVReaderBuilder(fileReader)
+                    .withSkipLines(csvHasHeader ? 1 : 0)
+                    .withCSVParser(parser)
+                    .build()) {
 
-        List<Compound> allData = csvReader.readAll()
-                .stream()
-                .map(Compound::new)
-                .toList();
-
-        return allData;
+                return csvReader.readAll()
+                        .stream()
+                        .map(Compound::new)
+                        .toList();
+            }
+        }
     }
 }

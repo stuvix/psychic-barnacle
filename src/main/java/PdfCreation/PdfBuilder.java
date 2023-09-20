@@ -27,7 +27,7 @@ public class PdfBuilder {
 
 
     private static final String location = "Grizzly @ Clausen";
-    private static final String time = "21:00";
+    private static final String time = "20:00";
 
     private static final PDType1Font font = TIMES_ROMAN;
 

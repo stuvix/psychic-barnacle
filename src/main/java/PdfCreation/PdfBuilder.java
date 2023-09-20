@@ -5,28 +5,31 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.awt.*;
 import java.io.IOException;
 
+import static org.apache.pdfbox.pdmodel.font.PDType1Font.COURIER;
 import static org.apache.pdfbox.pdmodel.font.PDType1Font.TIMES_ROMAN;
 
 public class PdfBuilder {
     private static final float pageWidth = 1800;
     private static final float pageHeight = 600;
 
-    private static final String templatePath = "src/main/resources/ticket_template.pdf";
     private static final String resPrefix = "src/main/resources/";
     private static final String bgPath = resPrefix + "bg.jpg";
     private static final String acelPath = resPrefix + "acel.png";
     private static final String logoPath = resPrefix + "logo.jpg";
 
-    private static final String qrPath = resPrefix + "qr.png";
+    private static final String qrPath = resPrefix + "barCode.png";
 
 
     private static final String location = "Grizzly @ Clausen";
     private static final String time = "21:00";
+
+    private static final PDType1Font font = TIMES_ROMAN;
 
     public static void createTicket(String firstName, String lastName, String saveTo) throws IOException {
         try (PDDocument ticket = new PDDocument()) {
@@ -43,7 +46,7 @@ public class PdfBuilder {
 
 
 
-            addTextCentered(ticket, "Michel Max", pageHeight * 0.1f);
+            addTextCentered(ticket, firstName + " " + lastName, pageHeight * 0.1f);
             addText(ticket, "Location:" ,pageWidth * 0.3f, pageHeight * 0.27f);
             addText(ticket, location, pageWidth * 0.3f, pageHeight * 0.2f);
 
@@ -51,7 +54,7 @@ public class PdfBuilder {
             addText(ticket, time, pageWidth * 0.6f, pageHeight * 0.2f);
 
 
-            addImageAsOverlay(ticket, qrPath, pageWidth * 0.8f, pageHeight * 0.1f, 250f);
+            addImageAsOverlayToRightBorder(ticket, qrPath);
 
             ticket.save(saveTo);
         }
@@ -93,6 +96,27 @@ public class PdfBuilder {
         cos.close();
     }
 
+    /**
+     * puts an image along the right edge of the ticket while occupying the full height of the page, and calculating the width accordingly.
+     * @param ticket
+     * @param path qr code file path
+     * @throws IOException
+     */
+    private static void addImageAsOverlayToRightBorder(PDDocument ticket, String path) throws IOException {
+        PDPage page = ticket.getPage(0);
+        PDImageXObject pdImageXObject = PDImageXObject.createFromFile(path, ticket);
+
+        PDPageContentStream cos = new PDPageContentStream(ticket, page,
+                PDPageContentStream.AppendMode.APPEND,
+                true);
+
+        //position is calculated from the right edge
+        float width = pdImageXObject.getWidth() / (pdImageXObject.getHeight() / pageHeight);
+
+        cos.drawImage(pdImageXObject, pageWidth - width, 0, width, pageHeight);
+        cos.close();
+    }
+
     private static void addText(PDDocument ticket, String text, float x, float y) throws IOException {
         PDPageContentStream contentStream = new PDPageContentStream(ticket, ticket.getPage(0),
                 PDPageContentStream.AppendMode.APPEND,
@@ -100,7 +124,7 @@ public class PdfBuilder {
         contentStream.beginText();
         contentStream.newLineAtOffset(x,y);
         contentStream.setNonStrokingColor(Color.WHITE);
-        contentStream.setFont(TIMES_ROMAN, 40);
+        contentStream.setFont(font, 40);
         contentStream.showText(text);
         contentStream.endText();
         contentStream.close();
@@ -114,7 +138,7 @@ public class PdfBuilder {
         float stringWidth = getStringWidth(text, TIMES_ROMAN, 40);
         contentStream.newLineAtOffset((pageWidth - stringWidth) / 2, y);
         contentStream.setNonStrokingColor(Color.WHITE);
-        contentStream.setFont(TIMES_ROMAN, 40);
+        contentStream.setFont(font, 40);
         contentStream.showText(text);
         contentStream.endText();
         contentStream.close();

@@ -2,6 +2,9 @@ import CsvReader.CsvReader;
 import PdfCreation.PdfBuilder;
 import com.opencsv.exceptions.CsvException;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 
 public class Main {
@@ -17,6 +20,7 @@ public class Main {
     }
 
     private static void testPDF() throws IOException {
-        PdfBuilder.createTicket("Michel", "Max", "out/out.pdf");
+        BufferedImage qrCode = ImageIO.read(new File("src/main/resources/barCode.png"));
+        PdfBuilder.createTicket("Michel", "Max", "out/out.pdf", qrCode);
     }
 }

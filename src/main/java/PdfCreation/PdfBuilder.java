@@ -4,14 +4,14 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 
-import static org.apache.pdfbox.pdmodel.font.PDType1Font.COURIER;
 import static org.apache.pdfbox.pdmodel.font.PDType1Font.TIMES_ROMAN;
 
 public class PdfBuilder {
@@ -23,15 +23,13 @@ public class PdfBuilder {
     private static final String acelPath = resPrefix + "acel.png";
     private static final String logoPath = resPrefix + "logo.jpg";
 
-    private static final String qrPath = resPrefix + "barCode.png";
-
 
     private static final String location = "Grizzly @ Clausen";
     private static final String time = "20:00";
 
     private static final PDType1Font font = TIMES_ROMAN;
 
-    public static void createTicket(String firstName, String lastName, String saveTo) throws IOException {
+    public static void createTicket(String firstName, String lastName, String saveTo, BufferedImage qrCode) throws IOException {
         try (PDDocument ticket = new PDDocument()) {
             PDPage page = new PDPage(new PDRectangle(pageWidth, pageHeight));
             ticket.addPage(page);
@@ -46,15 +44,15 @@ public class PdfBuilder {
 
 
 
-            addTextCentered(ticket, firstName + " " + lastName, pageHeight * 0.1f);
-            addText(ticket, "Location:" ,pageWidth * 0.3f, pageHeight * 0.27f);
-            addText(ticket, location, pageWidth * 0.3f, pageHeight * 0.2f);
+            addTextAtRatio(ticket, firstName + " " + lastName, pageHeight * 0.1f, 1f/2f);
+            addTextAtRatio(ticket, "Location:" ,pageHeight * 0.27f, 1f/3f);
+            addTextAtRatio(ticket, location, pageHeight * 0.2f, 1f/3f);
 
-            addText(ticket, "Time:", pageWidth * 0.6f, pageHeight * 0.27f);
-            addText(ticket, time, pageWidth * 0.6f, pageHeight * 0.2f);
+            addTextAtRatio(ticket, "Time:", pageHeight * 0.27f, 2f/3f);
+            addTextAtRatio(ticket, time, pageHeight * 0.2f, 2f/3f);
 
 
-            addImageAsOverlayToRightBorder(ticket, qrPath);
+            addImageAsOverlayToRightBorder(ticket, qrCode);
 
             ticket.save(saveTo);
         }
@@ -75,12 +73,7 @@ public class PdfBuilder {
 
     /**
      * respects the aspect ratio of the original image
-     * @param ticket
-     * @param path
-     * @param x
-     * @param y
-     * @param width
-     * @throws IOException
+     * @throws IOException if there is nothing at path
      */
     private static void addImageAsOverlay(PDDocument ticket, String path, float x, float y, float width) throws IOException {
         PDPage page = ticket.getPage(0);
@@ -98,13 +91,12 @@ public class PdfBuilder {
 
     /**
      * puts an image along the right edge of the ticket while occupying the full height of the page, and calculating the width accordingly.
-     * @param ticket
-     * @param path qr code file path
-     * @throws IOException
+     * @param image the actual qr code
+     * @throws IOException if there is nothing at path
      */
-    private static void addImageAsOverlayToRightBorder(PDDocument ticket, String path) throws IOException {
+    private static void addImageAsOverlayToRightBorder(PDDocument ticket, BufferedImage image) throws IOException {
         PDPage page = ticket.getPage(0);
-        PDImageXObject pdImageXObject = PDImageXObject.createFromFile(path, ticket);
+        PDImageXObject pdImageXObject = JPEGFactory.createFromImage(ticket, image);
 
         PDPageContentStream cos = new PDPageContentStream(ticket, page,
                 PDPageContentStream.AppendMode.APPEND,
@@ -130,13 +122,13 @@ public class PdfBuilder {
         contentStream.close();
     }
 
-    private static void addTextCentered(PDDocument ticket, String text, float y) throws IOException {
+    private static void addTextAtRatio(PDDocument ticket, String text, float y, float ratio) throws IOException {
         PDPageContentStream contentStream = new PDPageContentStream(ticket, ticket.getPage(0),
                 PDPageContentStream.AppendMode.APPEND,
                 true);
         contentStream.beginText();
-        float stringWidth = getStringWidth(text, TIMES_ROMAN, 40);
-        contentStream.newLineAtOffset((pageWidth - stringWidth) / 2, y);
+        float stringWidth = getStringWidth(text, 40);
+        contentStream.newLineAtOffset(pageWidth * ratio - stringWidth * (1f/2f), y);
         contentStream.setNonStrokingColor(Color.WHITE);
         contentStream.setFont(font, 40);
         contentStream.showText(text);
@@ -149,7 +141,7 @@ public class PdfBuilder {
 
     }
 
-    private static float getStringWidth(String text, PDFont font, int fontSize) throws IOException {
-        return font.getStringWidth(text) * fontSize / 1000F;
+    private static float getStringWidth(String text, int fontSize) throws IOException {
+        return PdfBuilder.font.getStringWidth(text) * fontSize / 1000F;
     }
 }

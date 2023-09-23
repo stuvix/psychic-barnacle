@@ -8,39 +8,54 @@ import com.opencsv.exceptions.CsvException;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 public class CsvReader {
     // set this to any non-standard separator
     private static final char separator = ',';
 
-    public static List<Compound> readCsv(String filePath) throws IOException, CsvException{
-        return readCsv(filePath, false);
-    }
+
 
     /**
      * reads a csv file and returns a list with compounds of the names.
      * @param filePath path to csv file with firstName, lastName in it.
-     * @param csvHasHeader the first line in csv files is often used to store column names. If this is the case, set to true.
-     *                     Set to false if first line contains data.
      * @return List with names.
      * @throws IOException mostly FileNotFoundException I suppose
      * @throws CsvException did not read the doc, so idk when this happens
      */
-    public static List<Compound> readCsv(String filePath, boolean csvHasHeader) throws IOException, CsvException {
+    public static List<Compound> readCsv(String filePath, String headerName, String headerAmount, String headerDoNotGenerate) throws IOException, CsvException {
         try (FileReader fileReader = new FileReader(filePath)) {
             // only needed if non-comma separator is used.
             CSVParser parser = new CSVParserBuilder().withSeparator(separator).build();
             try (CSVReader csvReader = new CSVReaderBuilder(fileReader)
-                    .withSkipLines(csvHasHeader ? 1 : 0)
+                    .withSkipLines(0)
                     .withCSVParser(parser)
                     .build()) {
 
-                return csvReader.readAll()
+                var allLines = csvReader.readAll();
+                int headerIndexName = getHeaderLocation(allLines.get(0), headerName);
+                int headerIndexAmount = getHeaderLocation(allLines.get(0), headerAmount);
+                int headerIndexDoNotGenerate = getHeaderLocation(allLines.get(0), headerDoNotGenerate);
+                allLines.remove(0);
+
+                return allLines
                         .stream()
-                        .map(Compound::new)
+                        .filter(line -> line[headerIndexDoNotGenerate].strip().isEmpty())
+                        .map(line -> new Compound(line[headerIndexName].strip(), Integer.parseInt(line[headerIndexAmount].strip())))
                         .toList();
             }
         }
     }
+
+    private static int getHeaderLocation(String[] headers, String columnName) {
+        for (int i = 0; i < headers.length; i++) {
+            if (headers[i].equals(columnName)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+
 }

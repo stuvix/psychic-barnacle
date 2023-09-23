@@ -7,6 +7,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.JPEGFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.util.Matrix;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -19,7 +20,7 @@ public class PdfBuilder {
     private static final float pageHeight = 600;
 
     private static final String resPrefix = "src/main/resources/";
-    private static final String bgPath = resPrefix + "bg.jpg";
+    private static final String bgPath = resPrefix + "img.png";
     private static final String acelPath = resPrefix + "acel.png";
     private static final String logoPath = resPrefix + "logo.jpg";
 
@@ -27,9 +28,9 @@ public class PdfBuilder {
     private static final String location = "Grizzly @ Clausen";
     private static final String time = "20:00";
 
-    private static final PDType1Font font = TIMES_ROMAN;
+    private static final PDType1Font font = PDType1Font.TIMES_BOLD;
 
-    public static void createTicket(String firstName, String lastName, String saveTo, BufferedImage qrCode) throws IOException {
+    public static void createTicket(String name, String saveTo, BufferedImage qrCode, String code) throws IOException {
         try (PDDocument ticket = new PDDocument()) {
             PDPage page = new PDPage(new PDRectangle(pageWidth, pageHeight));
             ticket.addPage(page);
@@ -37,19 +38,20 @@ public class PdfBuilder {
 
             addImageToBG(ticket, bgPath, new Rectangle(0,0, page.getMediaBox().getWidth(), page.getMediaBox().getHeight()));
 
-            addImageAsOverlay(ticket, acelPath, 50, 50, 100);
+            //addImageAsOverlay(ticket, acelPath, 50, 50, 100);
 
-            float logoWidth = 1000;
-            addImageAsOverlay(ticket, logoPath, (pageWidth - logoWidth) / 2, pageHeight * 0.35f, logoWidth);
+            /*float logoWidth = 1000;
+            addImageAsOverlay(ticket, logoPath, (pageWidth - logoWidth) / 2, pageHeight * 0.35f, logoWidth);*/
 
 
 
-            addTextAtRatio(ticket, firstName + " " + lastName, pageHeight * 0.1f, 1f/2f);
-            addTextAtRatio(ticket, "Location:" ,pageHeight * 0.27f, 1f/3f);
+            addRotatedText(ticket, name, pageWidth * 0.92f, pageHeight * 0.1f, 40);
+            addRotatedText(ticket, "Ticket Number: " + code, pageWidth * 0.96f, pageHeight * 0.05f, 25);
+            /* addTextAtRatio(ticket, "Location:" ,pageHeight * 0.27f, 1f/3f);
             addTextAtRatio(ticket, location, pageHeight * 0.2f, 1f/3f);
 
             addTextAtRatio(ticket, "Time:", pageHeight * 0.27f, 2f/3f);
-            addTextAtRatio(ticket, time, pageHeight * 0.2f, 2f/3f);
+            addTextAtRatio(ticket, time, pageHeight * 0.2f, 2f/3f);*/
 
 
             addImageAsOverlayToRightBorder(ticket, qrCode);
@@ -117,6 +119,31 @@ public class PdfBuilder {
         contentStream.newLineAtOffset(x,y);
         contentStream.setNonStrokingColor(Color.WHITE);
         contentStream.setFont(font, 40);
+        contentStream.showText(text);
+        contentStream.endText();
+        contentStream.close();
+    }
+
+    private static void addRotatedText(PDDocument ticket, String text, float x, float y, int fontSize) throws IOException {
+        PDPageContentStream contentStream = new PDPageContentStream(ticket, ticket.getPage(0),
+                PDPageContentStream.AppendMode.APPEND,
+                true);
+        PDPage page = ticket.getPage(0);
+
+        contentStream.beginText();
+
+
+        float width = getStringWidth(text, fontSize);
+        if (width > pageHeight) {
+            System.out.println("Warning: name of person "+text+" too long");
+        }
+        //float centeredY = y - width/2;
+
+        Matrix matrix = Matrix.getRotateInstance(Math.toRadians(90), x, y);
+        contentStream.setTextMatrix(matrix);
+
+        contentStream.setNonStrokingColor(Color.WHITE);
+        contentStream.setFont(font, fontSize);
         contentStream.showText(text);
         contentStream.endText();
         contentStream.close();

@@ -1,29 +1,16 @@
 package CsvReader;
 
 public class Compound {
-    public String firstName;
-    public String lastName;
+    public String name;
+    public int amount;
 
-    public String getLastName() {
-        return lastName;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public Compound(String firstName, String lastName) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-    }
-
-    public Compound(String[] array) {
-        this(array[0], array[1]);
-        assert(array.length == 2);
+    public Compound(String name, int amount) {
+        this.name = name;
+        this.amount = amount;
     }
 
     @Override
     public String toString() {
-        return firstName + " " + lastName;
+        return name;
     }
 }

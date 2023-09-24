@@ -21,7 +21,7 @@ public class Main {
             if (openJFileChooserResult == JFileChooser.APPROVE_OPTION) {
 
                 JFileChooser saveJFileChooser = new JFileChooser();
-                int saveJFileChooserResult = openJFileChooser.showSaveDialog(null);
+                int saveJFileChooserResult = saveJFileChooser.showSaveDialog(null);
                 String savePath = saveJFileChooser.getCurrentDirectory().getAbsolutePath();
 
                 if(saveJFileChooserResult != JFileChooser.APPROVE_OPTION){
